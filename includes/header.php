@@ -1,6 +1,8 @@
 <?php
 // includes/header.php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'db.php';
 ?>
 <!DOCTYPE html>
@@ -26,11 +28,12 @@ require_once 'db.php';
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="products.php">Marketplace</a></li>
+            <!-- Left Side: Core Navigation -->
+            <ul class="navbar-nav me-auto gap-lg-3">
+                <li class="nav-item"><a class="nav-link px-3" href="index.php">Home</a></li>
+                <li class="nav-item"><a class="nav-link px-3" href="products.php">Marketplace</a></li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown">Categories</a>
+                    <a class="nav-link dropdown-toggle px-3" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown">Categories</a>
                     <ul class="dropdown-menu dropdown-menu-dark glass-card p-2">
                         <li><a class="dropdown-item" href="products.php?category=Electronics">Electronics</a></li>
                         <li><a class="dropdown-item" href="products.php?category=Clothing">Clothing</a></li>
@@ -39,17 +42,47 @@ require_once 'db.php';
                     </ul>
                 </li>
             </ul>
+
+            <!-- Right Side: Unified Hamburger Account Hub -->
             <ul class="navbar-nav ms-auto align-items-center">
                 <?php if (isset($_SESSION['user_id'])): ?>
-                    <li class="nav-item"><a class="nav-link" href="cart.php"><i class="fas fa-shopping-cart"></i> <span class="badge bg-primary rounded-pill">0</span></a></li>
-                    <?php if ($_SESSION['is_admin']): ?>
-                        <li class="nav-item"><a class="nav-link text-warning" href="admin/dashboard.php">Admin Panel</a></li>
-                    <?php endif; ?>
-                    <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
-                    <li class="nav-item"><span class="nav-link fw-bold text-primary">Hi, <?php echo htmlspecialchars($_SESSION['user_name']); ?></span></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link p-0 border-0 shadow-none dropdown-toggle hide-caret" href="#" id="hamburgerMenu" role="button" data-bs-toggle="dropdown">
+                            <img src="assets/hamburger_menu.png" width="30" height="30" class="rounded-circle theme-changer shadow-sm">
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end glass-card p-3 shadow-lg border-light border-opacity-10 mt-3" style="min-width: 250px;">
+                            <li>
+                                <div class="px-3 mb-2 d-flex justify-content-between align-items-center">
+                                    <h6 class="dropdown-header text-primary small fw-bold text-uppercase mb-0 p-0">Hi, <?php echo htmlspecialchars($_SESSION['user_name']); ?></h6>
+                                    <span class="badge <?php echo ($_SESSION['role'] == 'Seller' ? 'bg-primary' : 'bg-success'); ?> rounded-pill px-2 py-1 fs-mini shadow-sm"><?php echo $_SESSION['role']; ?></span>
+                                </div>
+                            </li>
+                            <li><p class="px-3 mb-2 small text-muted opacity-75">Authenticated Account Node</p></li>
+                            <li><hr class="dropdown-divider opacity-10 mb-3"></li>
+                            
+                            <li><h6 class="dropdown-header text-primary small fw-bold text-uppercase mb-2">MY ACCOUNT</h6></li>
+                            <li><a class="dropdown-item py-2 rounded-3 text-white" href="profile.php"><i class="fas fa-user-circle me-2 opacity-50"></i> My Profile</a></li>
+                            <li><a class="dropdown-item py-2 rounded-3 text-white" href="cart.php"><i class="fas fa-shopping-cart me-2 opacity-50"></i> My Cart</a></li>
+                            <li><a class="dropdown-item py-2 rounded-3 text-white" href="myorders.php"><i class="fas fa-box-open me-2 opacity-50"></i> My Orders</a></li>
+                            <li><a class="dropdown-item py-2 rounded-3 text-white" href="testimonials.php"><i class="fas fa-star me-2 opacity-50"></i> Platform Reviews</a></li>
+                            
+                            <?php if ($_SESSION['is_admin']): ?>
+                                <li><a class="dropdown-item py-2 rounded-3 text-warning" href="admin/dashboard.php"><i class="fas fa-shield-alt me-2 opacity-50"></i> Admin Panel</a></li>
+                            <?php endif; ?>
+
+                            <li><hr class="dropdown-divider opacity-10 my-3"></li>
+                            <li><a class="dropdown-item py-2 rounded-3 text-danger mt-2" href="logout.php"><i class="fas fa-sign-out-alt me-2 opacity-75"></i> Logout Session</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item ms-3">
+                        <button id="theme-toggle" class="btn btn-link btn-sm p-0 border-0 shadow-none" title="Switch Theme">
+                            <img id="theme-icon" src="assets/light_theme.png" width="22" height="22" class="rounded-circle theme-changer">
+                        </button>
+                    </li>
                 <?php else: ?>
                     <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
-                    <li class="nav-item"><a class="btn btn-primary" href="register.php">Join Now</a></li>
+                    <li class="nav-item"><a class="btn btn-primary rounded-pill px-4" href="register.php">Join Now</a></li>
                 <?php endif; ?>
             </ul>
         </div>

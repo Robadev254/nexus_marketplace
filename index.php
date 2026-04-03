@@ -12,13 +12,20 @@ try {
 ?>
 
 <div class="container overflow-hidden">
-    <!-- Hero Section -->
     <header class="hero-section animate-fade-in">
         <h1 class="hero-title">Nexus Market Platform</h1>
         <p class="hero-subtitle">Discover the extraordinary in the pre-loved. Join our community to buy and sell premium used items with a click.</p>
         <div class="d-flex justify-content-center gap-3">
-            <a href="products.php" class="btn btn-primary btn-lg">Explore Marketplace</a>
-            <a href="register.php" class="btn btn-outline-light btn-lg">Join Nexus Market</a>
+            <?php if (!isset($_SESSION['user_id'])): ?>
+                <a href="products.php" class="btn btn-primary btn-lg rounded-pill px-5">Explore Marketplace</a>
+                <a href="register.php?role=Seller" class="btn btn-outline-light btn-lg rounded-pill px-5">Start Selling Now</a>
+            <?php elseif ($_SESSION['role'] === 'Buyer'): ?>
+                <a href="products.php" class="btn btn-primary btn-lg rounded-pill px-5">Continue Shopping</a>
+                <a href="register.php?role=Seller" class="btn btn-outline-light btn-lg rounded-pill px-5">Join as Seller</a>
+            <?php else: ?>
+                <a href="profile.php" class="btn btn-primary btn-lg rounded-pill px-5">Merchant Console</a>
+                <a href="products.php" class="btn btn-outline-light btn-lg rounded-pill px-5">View Marketplace</a>
+            <?php endif; ?>
         </div>
     </header>
 

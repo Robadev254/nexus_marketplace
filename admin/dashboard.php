@@ -15,6 +15,14 @@ try {
     $order_count = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
     $total_revenue = $pdo->query("SELECT SUM(total_price) FROM orders WHERE status != 'Cancelled'")->fetchColumn();
     
+    // Process Order Status Update
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_delivered'])) {
+        $order_id = (int)$_POST['order_id'];
+        $pdo->prepare("UPDATE orders SET status = 'Delivered' WHERE id = ?")->execute([$order_id]);
+        header("Location: dashboard.php?msg=Order Updated Successfully");
+        exit;
+    }
+
     $recent_orders = $pdo->query("SELECT o.*, u.name as user_name FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.order_date DESC LIMIT 5")->fetchAll();
 } catch (PDOException $e) {
     die("Error fetching dashboard data: " . $e->getMessage());
@@ -99,7 +107,16 @@ try {
                                     <td class="py-4 border-0 bg-transparent text-white"><?php echo htmlspecialchars($order['user_name']); ?></td>
                                     <td class="py-4 border-0 bg-transparent text-white fw-bold">$<?php echo number_format($order['total_price'], 2); ?></td>
                                     <td class="py-4 border-0 bg-transparent">
-                                        <span class="badge bg-opacity-25 rounded-pill px-3 py-2 text-white bg-secondary opacity-75"><?php echo $order['status']; ?></span>
+                                        <?php if ($order['status'] == 'Pending'): ?>
+                                            <form action="dashboard.php" method="POST" class="d-inline">
+                                                <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                                                <button type="submit" name="mark_delivered" class="badge bg-primary bg-opacity-25 border-0 rounded-pill px-3 py-2 text-white shadow-sm pointer">
+                                                    Mark Delivered
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <span class="badge bg-opacity-25 rounded-pill px-3 py-2 text-white bg-secondary opacity-75"><?php echo $order['status']; ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="py-4 border-0 bg-transparent text-muted small"><?php echo date("M d, Y", strtotime($order['order_date'])); ?></td>
                                 </tr>

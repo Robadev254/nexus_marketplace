@@ -44,12 +44,21 @@ try {
                     <div class="glass-card product-card h-100">
                         <img src="<?php echo htmlspecialchars($product['image_url']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-img w-100 mb-3" style="aspect-ratio: 4/5;">
                         <div class="p-2 d-flex flex-column flex-grow-1">
-                            <span class="badge-category mb-2"><?php echo htmlspecialchars($product['category']); ?></span>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge-category m-0"><?php echo htmlspecialchars($product['category']); ?></span>
+                                <?php if ($product['stock'] == 0): ?>
+                                    <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm fs-mini">Out of Stock</span>
+                                <?php elseif ($product['stock'] < 10): ?>
+                                    <span class="badge bg-warning text-dark rounded-pill px-2 py-1 shadow-sm fs-mini animate-pulse">Almost Out of Stock</span>
+                                <?php else: ?>
+                                    <span class="badge bg-success rounded-pill px-2 py-1 shadow-sm fs-mini">In Stock (<?php echo $product['stock']; ?>)</span>
+                                <?php endif; ?>
+                            </div>
                             <h5 class="fw-bold text-white mb-2"><?php echo htmlspecialchars($product['name']); ?></h5>
                             <p class="text-muted small mb-3 flex-grow-1"><?php echo substr(htmlspecialchars($product['description']), 0, 80) . '...'; ?></p>
                             <div class="d-flex justify-content-between align-items-center mt-auto">
                                 <span class="price-tag fs-5">$<?php echo number_format($product['price'], 2); ?></span>
-                                <a href="product_details.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-sm rounded-pill px-3">View</a>
+                                <a href="product_details.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-sm rounded-pill px-3 <?php echo ($product['stock'] == 0) ? 'disabled' : ''; ?>">View</a>
                             </div>
                         </div>
                     </div>

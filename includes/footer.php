@@ -14,19 +14,20 @@
             <div class="col-md-2 mb-4">
                 <h5 class="fw-bold mb-4">Marketplace</h5>
                 <ul class="list-unstyled">
-                    <li><a href="#" class="text-white opacity-75">All Categories</a></li>
-                    <li><a href="#" class="text-white opacity-75">Electronics</a></li>
-                    <li><a href="#" class="text-white opacity-75">Clothing</a></li>
-                    <li><a href="#" class="text-white opacity-75">Books</a></li>
+                    <li><a href="products.php" class="text-white opacity-75">All Categories</a></li>
+                    <li><a href="products.php?category=Electronics" class="text-white opacity-75">Electronics</a></li>
+                    <li><a href="products.php?category=Clothing" class="text-white opacity-75">Clothing</a></li>
+                    <li><a href="products.php?category=Books" class="text-white opacity-75">Books</a></li>
                 </ul>
             </div>
             <div class="col-md-2 mb-4">
                 <h5 class="fw-bold mb-4">Support</h5>
                 <ul class="list-unstyled">
-                    <li><a href="#" class="text-white opacity-75">Help Center</a></li>
-                    <li><a href="#" class="text-white opacity-75">Contact Us</a></li>
-                    <li><a href="#" class="text-white opacity-75">Returns</a></li>
-                    <li><a href="#" class="text-white opacity-75">FAQ</a></li>
+                    <li><a href="help.php" class="text-white opacity-75">Help Center</a></li>
+                    <li><a href="contact.php" class="text-white opacity-75">Contact Us</a></li>
+                    <li><a href="seller_help.php" class="text-muted text-decoration-none small">Selling with Us</a></li>
+                    <li><a href="testimonials.php" class="text-muted text-decoration-none small">Testimonials & Reviews</a></li>
+                    <li><a href="faq.php" class="text-muted text-decoration-none small">FAQ</a></li>
                 </ul>
             </div>
             <div class="col-md-4 mb-4">
