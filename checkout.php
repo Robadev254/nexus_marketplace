@@ -100,6 +100,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
     }
 
     if (empty($error)) {
+        // PRE-FLIGHT: Batch Availability Verification
+        foreach ($cart_items as $checkItem) {
+            if ($checkItem['stock'] < $checkItem['quantity']) {
+                $error = "Stock Depletion: Listing '" . htmlspecialchars($checkItem['name']) . "' has insufficient batch units to fulfill this request. Current availability: " . $checkItem['stock'];
+                break;
+            }
+        }
+    }
+
+    if (empty($error)) {
         try {
             $pdo->beginTransaction();
 

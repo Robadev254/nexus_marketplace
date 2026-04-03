@@ -2,9 +2,9 @@
 // index.php
 require_once 'includes/header.php';
 
-// Fetch featured products
+// Fetch featured products (Only In-Stock Nodes)
 try {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY created_at DESC LIMIT 6");
+    $stmt = $pdo->query("SELECT * FROM products WHERE stock > 0 ORDER BY created_at DESC LIMIT 6");
     $featured_products = $stmt->fetchAll();
 } catch (PDOException $e) {
     die("Error fetching products: " . $e->getMessage());

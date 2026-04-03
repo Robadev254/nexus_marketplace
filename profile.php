@@ -262,16 +262,14 @@ if ($role === 'Seller') {
                                             <?php endif; ?>
                                         </td>
                                         <td class="py-4 border-0 text-center">
-                                            <form action="profile.php" method="POST">
+                                            <form action="profile.php" method="POST" id="status-form-<?php echo $p['id']; ?>">
                                                 <input type="hidden" name="action" value="toggle_stock">
                                                 <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
-                                                <?php if ($p['stock'] > 0): ?>
-                                                    <input type="hidden" name="new_stock" value="0">
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 scale-hover">Deactivate</button>
-                                                <?php else: ?>
-                                                    <input type="hidden" name="new_stock" value="20">
-                                                    <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 scale-hover">Re-stock</button>
-                                                <?php endif; ?>
+                                                <select name="new_stock" class="form-select btn btn-outline-<?php echo ($p['stock'] >= 10 ? 'success' : ($p['stock'] > 0 ? 'warning' : 'danger')); ?> btn-sm rounded-pill px-3 py-1 fs-mini shadow-sm border-0 bg-transparent" onchange="this.form.submit()" style="min-width: 140px; -webkit-appearance: none;">
+                                                    <option value="15" <?php echo ($p['stock'] >= 10 ? 'selected' : ''); ?> class="bg-dark text-white">Full Node: In Stock</option>
+                                                    <option value="5" <?php echo ($p['stock'] > 0 && $p['stock'] < 10 ? 'selected' : ''); ?> class="bg-dark text-white">Limited: Few Left</option>
+                                                    <option value="0" <?php echo ($p['stock'] == 0 ? 'selected' : ''); ?> class="bg-dark text-white">Archived: Out of Stock</option>
+                                                </select>
                                             </form>
                                         </td>
                                         <td class="py-4 border-0 text-end fw-bold text-primary">$<?php echo number_format($p['price'], 2); ?></td>
