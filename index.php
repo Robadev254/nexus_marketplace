@@ -37,20 +37,19 @@ try {
         </div>
         <div class="row g-4">
             <?php 
-            $cats = [
-                ['name' => 'Electronics', 'icon' => 'fas fa-laptop', 'color' => '#6366f1'],
-                ['name' => 'Clothing', 'icon' => 'fas fa-tshirt', 'color' => '#ec4899'],
-                ['name' => 'Books', 'icon' => 'fas fa-book', 'color' => '#10b981'],
-                ['name' => 'Collectibles', 'icon' => 'fas fa-gem', 'color' => '#f59e0b']
-            ];
-            foreach($cats as $cat): ?>
-                <div class="col-6 col-md-3">
-                    <a href="products.php?category=<?php echo $cat['name']; ?>" class="glass-card d-block text-center text-decoration-none py-4">
-                        <i class="<?php echo $cat['icon']; ?> fs-2 mb-3" style="color: <?php echo $cat['color']; ?>;"></i>
-                        <h5 class="mb-0 text-white"><?php echo $cat['name']; ?></h5>
-                    </a>
-                </div>
-            <?php endforeach; ?>
+            $cats = $pdo->query("SELECT * FROM categories ORDER BY name ASC LIMIT 4")->fetchAll();
+            if (count($cats) > 0):
+                foreach($cats as $cat): ?>
+                    <div class="col-6 col-md-3">
+                        <a href="products.php?category=<?php echo urlencode($cat['name']); ?>" class="glass-card d-block text-center text-decoration-none py-4">
+                            <i class="<?php echo htmlspecialchars($cat['icon']); ?> fs-2 mb-3" style="color: <?php echo $cat['color']; ?>;"></i>
+                            <h5 class="mb-0 text-white"><?php echo htmlspecialchars($cat['name']); ?></h5>
+                        </a>
+                    </div>
+                <?php endforeach; 
+            else: ?>
+                <div class="col-12"><p class="text-muted small italic">No classification nodes initialized.</p></div>
+            <?php endif; ?>
         </div>
     </section>
 

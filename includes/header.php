@@ -33,12 +33,15 @@ require_once 'db.php';
                 <li class="nav-item"><a class="nav-link px-3" href="index.php">Home</a></li>
                 <li class="nav-item"><a class="nav-link px-3" href="products.php">Marketplace</a></li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle px-3" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown">Categories</a>
-                    <ul class="dropdown-menu dropdown-menu-dark glass-card p-2">
-                        <li><a class="dropdown-item" href="products.php?category=Electronics">Electronics</a></li>
-                        <li><a class="dropdown-item" href="products.php?category=Clothing">Clothing</a></li>
-                        <li><a class="dropdown-item" href="products.php?category=Books">Books</a></li>
-                        <li><a class="dropdown-item" href="products.php?category=Collectibles">Collectibles</a></li>
+                    <a class="nav-link dropdown-toggle" href="#" id="catDropdown" role="button" data-bs-toggle="dropdown">Categories</a>
+                    <ul class="dropdown-menu glass-card border-0 shadow-lg mt-2" aria-labelledby="catDropdown">
+                        <?php 
+                        $navCats = $pdo->query("SELECT name FROM categories ORDER BY name ASC LIMIT 10")->fetchAll();
+                        foreach($navCats as $nc): ?>
+                            <li><a class="dropdown-item py-2 px-4 small" href="products.php?category=<?php echo urlencode($nc['name']); ?>"><?php echo htmlspecialchars($nc['name']); ?></a></li>
+                        <?php endforeach; ?>
+                        <li><hr class="dropdown-divider opacity-25 mx-3"></li>
+                        <li><a class="dropdown-item py-2 px-4 small fw-bold" href="products.php">All Nodes</a></li>
                     </ul>
                 </li>
             </ul>

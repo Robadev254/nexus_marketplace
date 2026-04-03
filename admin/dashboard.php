@@ -130,19 +130,39 @@ try {
             <div class="glass-card p-4 h-100 border-0 shadow-lg">
                 <h4 class="fw-bold mb-5">Admin Portal</h4>
                 <div class="d-grid gap-3">
-                    <a href="manage_products.php" class="btn btn-primary py-4 rounded-4 fs-5 text-start shadow-sm position-relative overflow-hidden">
+                    <a href="manage_products.php" class="btn btn-primary py-4 rounded-4 fs-5 text-start shadow-sm position-relative overflow-hidden mb-3">
                         <i class="fas fa-boxes me-3 fs-3 opacity-25 position-absolute top-50 end-0 translate-middle"></i>
                         <h6 class="mb-1 text-white-50 small text-uppercase fw-bold">Live Inventory</h6>
                         <span class="fw-bold">Market Management</span>
                     </a>
-                    <a href="#" class="btn btn-outline-light py-4 rounded-4 fs-5 text-start shadow-sm opacity-50">
-                        <h6 class="mb-1 text-muted small text-uppercase fw-bold">Order Tracking</h6>
-                        <span class="fw-bold">Platform Logistics</span>
+                    <a href="manage_categories.php" class="btn btn-outline-light py-4 rounded-4 fs-5 text-start shadow-sm mb-3">
+                        <h6 class="mb-1 text-muted small text-uppercase fw-bold">Node Hierarchy</h6>
+                        <span class="fw-bold">Category Classification</span>
                     </a>
-                    <a href="#" class="btn btn-outline-light py-4 rounded-4 fs-5 text-start shadow-sm opacity-50">
+                    <a href="#" class="btn btn-outline-light py-4 rounded-4 fs-5 text-start shadow-sm opacity-50 mb-3">
                         <h6 class="mb-1 text-muted small text-uppercase fw-bold">User Records</h6>
                         <span class="fw-bold">Community Governance</span>
                     </a>
+                </div>
+
+                <hr class="my-5 opacity-10">
+                
+                <h5 class="fw-bold mb-4 small opacity-50 text-uppercase tracking-widest">Global Communication Frequency</h5>
+                <div class="list-group list-group-flush bg-transparent overflow-auto" style="max-height: 400px;">
+                    <?php 
+                    $msgStmt = $pdo->query("SELECT m.*, u1.name as sender, u2.name as receiver FROM messages m JOIN users u1 ON m.sender_id = u1.id JOIN users u2 ON m.receiver_id = u2.id ORDER BY m.created_at DESC LIMIT 20");
+                    foreach($msgStmt->fetchAll() as $m): ?>
+                        <div class="list-group-item bg-transparent border-light border-opacity-10 py-3 px-0">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="small fw-bold text-primary"><?php echo htmlspecialchars($m['sender']); ?> <i class="fas fa-arrow-right mx-1 opacity-25"></i> <?php echo htmlspecialchars($m['receiver']); ?></span>
+                                <span class="fs-mini opacity-25"><?php echo date("H:i", strtotime($m['created_at'])); ?></span>
+                            </div>
+                            <p class="small text-muted mb-0 italic">"<?php echo htmlspecialchars($m['content']); ?>"</p>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if ($msgStmt->rowCount() == 0): ?>
+                        <p class="small text-muted italic text-center py-3">No active transmissions detected.</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

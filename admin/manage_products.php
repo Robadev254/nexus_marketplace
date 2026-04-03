@@ -103,13 +103,14 @@ $products = $pdo->query("SELECT * FROM products ORDER BY created_at DESC")->fetc
                     <div class="mb-3 text-start"><label class="small fw-bold opacity-50">PRODUCT TITLE</label><input type="text" name="name" class="form-control" required></div>
                     <div class="mb-3 text-start"><label class="small fw-bold opacity-50">UNIT PRICE ($)</label><input type="number" step="0.01" name="price" class="form-control" required></div>
                     <div class="mb-3 text-start"><label class="small fw-bold opacity-50">INITIAL BATCH (STOCK)</label><input type="number" name="stock" class="form-control" required value="20"></div>
-                    <div class="mb-3 text-start">
-                        <label class="small fw-bold opacity-50">CATEGORY</label>
-                        <select name="category" class="form-control bg-dark text-white" required>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Clothing">Clothing</option>
-                            <option value="Books">Books</option>
-                            <option value="Collectibles">Collectibles</option>
+                    <div class="mb-4">
+                        <label class="small fw-bold opacity-50">NODE CLASSIFICATION (CATEGORY)</label>
+                        <select name="category" class="form-select border-0 bg-white bg-opacity-10 text-white rounded-4 py-3 shadow-none p-3 small" style="background-image: none !important;">
+                            <?php 
+                            $formCats = $pdo->query("SELECT name FROM categories ORDER BY name ASC")->fetchAll();
+                            foreach($formCats as $fc): ?>
+                                <option value="<?php echo htmlspecialchars($fc['name']); ?>" class="bg-dark"><?php echo htmlspecialchars($fc['name']); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="mb-3 text-start">
