@@ -243,6 +243,35 @@ body {
     transform: translateX(5px);
 }
 
+/* Floating Action Node (FAB) */
+.fab-node {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 2100;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white !important;
+    text-decoration: none !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.fab-node:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 15px 40px rgba(99, 102, 241, 0.6);
+}
+
+.fab-node i {
+    font-size: 1.5rem;
+}
+
 .light-theme .theme-changer {
     filter: brightness(0); /* Light mode: icon is black */
 }

@@ -54,10 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
             try {
                 $stmt = $pdo->prepare("INSERT INTO products (name, description, price, image_url, category, `condition`, stock, seller_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$name, $desc, $price, $db_path, $cat, $cond, $stock, $seller]);
-                $success = "Broadcast Complete: New treasure listed on Nexus Market!";
-            } catch (PDOException $e) { $error = "Listing node failed."; }
+                $last_id = $pdo->lastInsertId();
+                $success = "Broadcast Complete: New listing synchronized on Nexus Market! <a href='../product_details.php?id=$last_id' class='fw-bold text-white text-decoration-underline ms-2'>View Active Node</a>";
+            } catch (PDOException $e) { $error = "Listing node failure: " . $e->getMessage(); }
         } else { $error = "Media transmission failure."; }
     } else { $error = "Product image required."; }
+}
+
+// Delete Product Node
+if (isset($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
+    try {
+        $pdo->prepare("DELETE FROM products WHERE id = ?")->execute([$id]);
+        $success = "Product node archived from global marketplace.";
+    } catch (PDOException $e) { $error = "Archival failure: Product may be linked to active orders."; }
+}
+
+// Toggle Stock Synchronicity
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_stock'])) {
+    $id = (int)$_POST['product_id'];
+    $new_stock = (int)$_POST['new_stock'];
+    try {
+        $pdo->prepare("UPDATE products SET stock = ? WHERE id = ?")->execute([$new_stock, $id]);
+        $success = "Inventory batch synchronized.";
+    } catch (PDOException $e) { $error = "Batch update failed."; }
 }
 
 $products = $pdo->query("SELECT * FROM products ORDER BY created_at DESC")->fetchAll();
@@ -140,11 +160,10 @@ $products = $pdo->query("SELECT * FROM products ORDER BY created_at DESC")->fetc
                     <table class="table table-dark table-hover border-all border-light border-opacity-10 align-middle">
                         <thead class="bg-white bg-opacity-5">
                             <tr>
-                                <th class="py-4 border-0">Product</th>
+                                <th class="py-4 border-0">Global Listing</th>
                                 <th class="py-4 border-0 text-center">Batch Status</th>
-                                <th class="py-4 border-0 text-end">Price</th>
-                                <th class="py-4 border-0 text-center">Update</th>
-                                <th class="py-4 border-0 text-end">Action</th>
+                                <th class="py-4 border-0 text-center">In-Stock Sync</th>
+                                <th class="py-4 border-0 text-end">Action Node</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -152,25 +171,31 @@ $products = $pdo->query("SELECT * FROM products ORDER BY created_at DESC")->fetc
                                 <tr class="border-light border-opacity-10">
                                     <td class="py-4 border-0">
                                         <div class="d-flex align-items-center">
-                                            <img src="../<?php echo htmlspecialchars($p['image_url']); ?>" class="rounded-3 me-3" width="45" height="45" style="object-fit: cover;">
-                                            <div><h6 class="fw-bold mb-0"><?php echo htmlspecialchars($p['name']); ?></h6><span class="small opacity-50">ID #<?php echo $p['id']; ?></span></div>
+                                            <img src="../<?php echo htmlspecialchars($p['image_url']); ?>" class="rounded-3 me-3 shadow-md" width="45" height="45" style="object-fit: cover;">
+                                            <div>
+                                                <h6 class="fw-bold mb-0"><?php echo htmlspecialchars($p['name']); ?></h6>
+                                                <span class="small text-primary opacity-75">$<?php echo number_format($p['price'], 2); ?></span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="py-4 border-0 text-center">
-                                        <?php if ($p['stock'] == 0): ?>
-                                            <span class="out-stock-alert"><i class="fas fa-times-circle"></i> OUT OF STOCK</span>
-                                        <?php elseif ($p['stock'] < 10): ?>
-                                            <span class="low-stock-alert animate-pulse"><i class="fas fa-exclamation-triangle"></i> ALMOST OUT (<?php echo $p['stock']; ?>)</span>
+                                        <?php if ($p['stock'] > 0): ?>
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">SYNCHRONIZED (<?php echo $p['stock']; ?>)</span>
                                         <?php else: ?>
-                                            <span class="text-success small fw-bold">IN STOCK (<?php echo $p['stock']; ?>)</span>
+                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1">OUT OF STOCK</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="py-4 border-0 text-end fw-bold text-primary">$<?php echo number_format($p['price'], 2); ?></td>
-                                    <td class="py-4 border-0">
-                                        <form action="manage_products.php" method="POST" class="d-flex gap-2 justify-content-center">
+                                    <td class="py-4 border-0 text-center">
+                                        <a href="../edit_product.php?id=<?php echo $p['id']; ?>" class="btn btn-outline-light btn-sm rounded-pill px-4">Edit Details</a>
+                                        <form action="manage_products.php" method="POST" class="d-inline">
                                             <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
-                                            <input type="number" name="quantity" value="<?php echo $p['stock']; ?>" class="form-control form-control-sm bg-transparent text-white text-center" style="width: 60px;">
-                                            <button type="submit" name="update_stock" class="btn btn-link text-primary p-0 shadow-none"><i class="fas fa-check-circle"></i></button>
+                                            <?php if ($p['stock'] > 0): ?>
+                                                <input type="hidden" name="new_stock" value="0">
+                                                <button type="submit" name="toggle_stock" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 scale-hover">Mark Out-Stock</button>
+                                            <?php else: ?>
+                                                <input type="hidden" name="new_stock" value="20">
+                                                <button type="submit" name="toggle_stock" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1 scale-hover">Mark In-Stock</button>
+                                            <?php endif; ?>
                                         </form>
                                     </td>
                                     <td class="py-4 border-0 text-end px-3">

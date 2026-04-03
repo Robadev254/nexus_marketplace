@@ -48,10 +48,15 @@ require_once 'db.php';
 
             <!-- Right Side: Unified Hamburger Account Hub -->
             <ul class="navbar-nav ms-auto align-items-center">
-                <?php if (isset($_SESSION['user_id'])): ?>
+                <?php if (isset($_SESSION['user_id'])): 
+                    $navUser = $pdo->prepare("SELECT profile_pic, name FROM users WHERE id = ?");
+                    $navUser->execute([$_SESSION['user_id']]);
+                    $navUserData = $navUser->fetch();
+                    $nav_pic = $navUserData['profile_pic'] ?: 'https://ui-avatars.com/api/?name=' . urlencode($navUserData['name']) . '&background=6366f1&color=fff';
+                ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link p-0 border-0 shadow-none dropdown-toggle hide-caret" href="#" id="hamburgerMenu" role="button" data-bs-toggle="dropdown">
-                            <img src="assets/hamburger_menu.png" width="30" height="30" class="rounded-circle theme-changer shadow-sm">
+                            <img src="<?php echo htmlspecialchars($nav_pic); ?>" width="35" height="35" class="rounded-circle shadow-sm border border-primary border-opacity-25" style="object-fit: cover;">
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end glass-card p-3 shadow-lg border-light border-opacity-10 mt-3" style="min-width: 250px;">
                             <li>
