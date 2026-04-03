@@ -1,0 +1,30 @@
+# Environment Configuration
+.env
+/.env
+
+# XAMPP / Local Development
+/tmp/
+*.log
+
+# Database
+*.sql
+!marketplace.sql
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project Assets
+assets/denim
+assets/vintage
+
+# PHP Dependencies
+node_modules/
+vendor/
+composer.lock

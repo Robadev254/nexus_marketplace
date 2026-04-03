@@ -1,9 +1,20 @@
 <?php
 // includes/db.php
-$host = "localhost";
-$user = "root";
-$pass = "ventrix";
-$db = "marketplace";
+// Load .env variables
+$env_path = dirname(__DIR__) . '/.env';
+if (file_exists($env_path)) {
+    $env = parse_ini_file($env_path);
+    $host = $env['DB_HOST'];
+    $user = $env['DB_USER'];
+    $pass = $env['DB_PASS'];
+    $db   = $env['DB_NAME'];
+} else {
+    // Fallback if .env is missing
+    $host = "localhost";
+    $user = "root";
+    $pass = "";
+    $db   = "marketplace";
+}
 
 try {
     $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
