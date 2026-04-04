@@ -37,7 +37,14 @@ try {
                             <div>
                                 <span class="text-primary small fw-bold text-uppercase tracking-wider">Transaction ID</span>
                                 <h4 class="fw-bold mb-1 text-white">#NX-ORD-<?php echo $order['id']; ?></h4>
-                                <p class="text-muted small mb-0"><i class="far fa-calendar-alt me-1"></i> Placed on <?php echo date("M d, Y | H:i", strtotime($order['order_date'])); ?></p>
+                                <p class="text-muted small mb-0">
+                                    <i class="far fa-calendar-alt me-1"></i> Placed on <?php echo date("M d, Y | H:i", strtotime($order['order_date'])); ?>
+                                    <?php if (isset($order['delivery_method'])): ?>
+                                        <span class="ms-2 badge bg-<?php echo $order['delivery_method'] === 'Pickup' ? 'success' : 'primary'; ?> bg-opacity-10 text-<?php echo $order['delivery_method'] === 'Pickup' ? 'success' : 'primary'; ?> rounded-pill px-2 py-1 fs-mini">
+                                            <i class="fas fa-<?php echo $order['delivery_method'] === 'Pickup' ? 'store' : 'truck'; ?> me-1"></i><?php echo $order['delivery_method']; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </p>
                             </div>
                             <div class="mt-3 mt-md-0 d-flex align-items-center">
                                 <?php 
@@ -98,29 +105,52 @@ try {
                             </table>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center p-4 bg-white bg-opacity-5 rounded-4">
-                            <div class="d-flex align-items-center">
-                                <div class="me-4">
-                                    <p class="mb-0 text-muted small text-uppercase">Payment Method</p>
-                                    <p class="mb-0 text-white fw-bold"><i class="fas fa-shield-check text-success me-1"></i> Secure Transaction</p>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center p-4 bg-white bg-opacity-5 rounded-4 gap-3">
+                            <div class="d-flex align-items-center flex-wrap gap-3">
+                                <div>
+                                    <p class="mb-0 text-muted small text-uppercase">Payment</p>
+                                    <p class="mb-0 text-white fw-bold small">
+                                        <?php if (isset($order['payment_method']) && $order['payment_method'] === 'PayPal'): ?>
+                                            <i class="fab fa-paypal text-primary me-1"></i> PayPal
+                                        <?php else: ?>
+                                            <i class="fas fa-credit-card text-primary me-1"></i> Card
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="mb-0 text-muted small text-uppercase">Fulfillment</p>
+                                    <p class="mb-0 text-white fw-bold small">
+                                        <?php if (isset($order['delivery_method']) && $order['delivery_method'] === 'Pickup'): ?>
+                                            <i class="fas fa-store me-1" style="color: #10b981;"></i> Store Pickup
+                                        <?php else: ?>
+                                            <i class="fas fa-truck text-primary me-1"></i> Delivery
+                                        <?php endif; ?>
+                                    </p>
                                 </div>
                                 <?php if ($order['status'] == 'Pending'): ?>
                                     <form action="cancel_order.php" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');">
                                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4 py-2 border-opacity-25 bg-danger bg-opacity-10">
-                                            <i class="fas fa-times me-1"></i> Cancel Order
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 border-opacity-25 bg-danger bg-opacity-10">
+                                            <i class="fas fa-times me-1"></i> Cancel
                                         </button>
                                     </form>
                                 <?php elseif ($order['status'] == 'Cancelled'): ?>
                                     <form action="reorder.php" method="POST">
                                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 py-2 shadow-sm">
-                                            <i class="fas fa-redo me-1"></i> Reorder Now
+                                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 py-1 shadow-sm">
+                                            <i class="fas fa-redo me-1"></i> Reorder
                                         </button>
                                     </form>
                                 <?php endif; ?>
                             </div>
                             <div class="text-end">
+                                <?php 
+                                    $del_fee = isset($order['delivery_fee']) ? (float)$order['delivery_fee'] : 0;
+                                    $item_total = $order['total_price'] - $del_fee;
+                                ?>
+                                <?php if ($del_fee > 0): ?>
+                                    <p class="mb-0 text-muted fs-mini">Items: $<?php echo number_format($item_total, 2); ?> + Delivery: $<?php echo number_format($del_fee, 2); ?></p>
+                                <?php endif; ?>
                                 <p class="mb-0 text-muted small text-uppercase">Total Settlement</p>
                                 <h3 class="fw-bold mb-0 text-secondary">$<?php echo number_format($order['total_price'], 2); ?></h3>
                             </div>

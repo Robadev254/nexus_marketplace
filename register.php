@@ -5,6 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once 'includes/db.php';
 
 $error = '';
+$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : (isset($_POST['redirect']) ? $_POST['redirect'] : '');
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $email = $_POST['email'];
@@ -21,7 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Step 2: Global Account Initialization
             $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
             $stmt->execute([$name, $email, $password, $role]);
-            header("Location: login.php?registered=1");
+            
+            // Pass redirect back to login
+            $login_target = "login.php?registered=1";
+            if (!empty($redirect)) {
+                $login_target .= "&redirect=" . urlencode($redirect);
+            }
+            header("Location: $login_target");
             exit;
         }
     } catch (PDOException $e) {
@@ -52,6 +60,7 @@ require_once 'includes/header.php';
         <?php endif; ?>
 
         <form action="register.php" method="POST">
+            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
             <div class="mb-4">
                 <label class="form-label text-muted">Full Name</label>
                 <div class="input-group">
@@ -117,7 +126,7 @@ require_once 'includes/header.php';
             </div>
         </form>
 
-        <p class="text-center text-muted mb-0">Already a member? <a href="login.php" class="text-primary fw-bold text-decoration-none">Log In</a></p>
+        <p class="text-center text-muted mb-0">Already a member? <a href="login.php<?php echo !empty($redirect) ? '?redirect=' . urlencode($redirect) : ''; ?>" class="text-primary fw-bold text-decoration-none">Log In</a></p>
     </div>
 </div>
 

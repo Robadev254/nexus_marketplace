@@ -13,7 +13,7 @@ try {
     $user_count = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
     $product_count = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
     $order_count = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-    $total_revenue = $pdo->query("SELECT SUM(total_price) FROM orders WHERE status != 'Cancelled'")->fetchColumn();
+    $total_revenue = $pdo->query("SELECT SUM(total_price) FROM orders WHERE status != 'Cancelled'")->fetchColumn() ?: 0;
     
     // Process Order Status Update
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_delivered'])) {
@@ -44,7 +44,7 @@ try {
     <div class="container">
         <a class="navbar-brand fw-bold fs-3" href="../index.php" style="background: linear-gradient(45deg, #6366f1, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">NEXUS ADMIN</a>
         <div class="ms-auto d-flex align-items-center">
-            <span class="text-white opacity-75 me-3">Welcome, <span class="fw-bold"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span></span>
+            <span class="text-white opacity-100 me-3">Welcome, <span class="fw-bold text-primary"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span></span>
             <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3">Logout</a>
         </div>
     </div>
@@ -56,28 +56,28 @@ try {
             <div class="glass-card text-center py-5 border-start border-primary border-5 rounded-4 shadow-sm h-100">
                 <i class="fas fa-users mb-4 fs-1 opacity-75 text-primary"></i>
                 <h2 class="fw-bold mb-1"><?php echo $user_count; ?></h2>
-                <p class="text-muted text-uppercase small mb-0">Total Community</p>
+                <p class="text-white-50 text-uppercase small mb-0 fw-bold">Total Community</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="glass-card text-center py-5 border-start border-secondary border-5 rounded-4 shadow-sm h-100">
                 <i class="fas fa-box-open mb-4 fs-1 opacity-75 text-secondary"></i>
                 <h2 class="fw-bold mb-1"><?php echo $product_count; ?></h2>
-                <p class="text-muted text-uppercase small mb-0">Live Marketplace</p>
+                <p class="text-white-50 text-uppercase small mb-0 fw-bold">Live Marketplace</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="glass-card text-center py-5 border-start border-accent border-5 rounded-4 shadow-sm h-100" style="border-color: #10b981 !important;">
                 <i class="fas fa-shopping-cart mb-4 fs-1 opacity-75 text-accent"></i>
                 <h2 class="fw-bold mb-1"><?php echo $order_count; ?></h2>
-                <p class="text-muted text-uppercase small mb-0">Volume Orders</p>
+                <p class="text-white-50 text-uppercase small mb-0 fw-bold">Volume Orders</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="glass-card text-center py-5 border-start border-warning border-5 rounded-4 shadow-sm h-100" style="border-color: #f59e0b !important;">
                 <i class="fas fa-wallet mb-4 fs-1 opacity-75 text-warning"></i>
-                <h2 class="fw-bold mb-1">$<?php echo number_format($total_revenue, 2); ?></h2>
-                <p class="text-muted text-uppercase small mb-0">Total Revenue</p>
+                <h2 class="fw-bold mb-1">$<?php echo number_format((float)($total_revenue ?? 0), 2); ?></h2>
+                <p class="text-white-50 text-uppercase small mb-0 fw-bold">Total Revenue</p>
             </div>
         </div>
     </div>
@@ -91,8 +91,8 @@ try {
                 </div>
                 <div class="table-responsive">
                     <table class="table table-dark table-hover border-0 mb-0">
-                        <thead class="border-light opacity-25">
-                            <tr>
+                        <thead class="border-light border-opacity-25">
+                            <tr class="text-white-50">
                                 <th class="py-4 border-0 bg-transparent">ID</th>
                                 <th class="py-4 border-0 bg-transparent">User</th>
                                 <th class="py-4 border-0 bg-transparent">Price</th>
@@ -102,7 +102,7 @@ try {
                         </thead>
                         <tbody>
                             <?php foreach($recent_orders as $order): ?>
-                                <tr class="align-middle border-light opacity-50">
+                                <tr class="align-middle border-light border-opacity-10">
                                     <td class="py-4 border-0 bg-transparent fw-bold text-primary">#<?php echo $order['id']; ?></td>
                                     <td class="py-4 border-0 bg-transparent text-white"><?php echo htmlspecialchars($order['user_name']); ?></td>
                                     <td class="py-4 border-0 bg-transparent text-white fw-bold">$<?php echo number_format($order['total_price'], 2); ?></td>
@@ -118,7 +118,7 @@ try {
                                             <span class="badge bg-opacity-25 rounded-pill px-3 py-2 text-white bg-secondary opacity-75"><?php echo $order['status']; ?></span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="py-4 border-0 bg-transparent text-muted small"><?php echo date("M d, Y", strtotime($order['order_date'])); ?></td>
+                                    <td class="py-4 border-0 bg-transparent text-white-50 small"><?php echo date("M d, Y", strtotime($order['order_date'])); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -136,18 +136,18 @@ try {
                         <span class="fw-bold">Market Management</span>
                     </a>
                     <a href="manage_categories.php" class="btn btn-outline-light py-4 rounded-4 fs-5 text-start shadow-sm mb-3">
-                        <h6 class="mb-1 text-muted small text-uppercase fw-bold">Node Hierarchy</h6>
+                        <h6 class="mb-1 text-white-50 small text-uppercase fw-bold">Node Hierarchy</h6>
                         <span class="fw-bold">Category Classification</span>
                     </a>
                     <a href="#" class="btn btn-outline-light py-4 rounded-4 fs-5 text-start shadow-sm opacity-50 mb-3">
-                        <h6 class="mb-1 text-muted small text-uppercase fw-bold">User Records</h6>
+                        <h6 class="mb-1 text-white-50 small text-uppercase fw-bold">User Records</h6>
                         <span class="fw-bold">Community Governance</span>
                     </a>
                 </div>
 
                 <hr class="my-5 opacity-10">
                 
-                <h5 class="fw-bold mb-4 small opacity-50 text-uppercase tracking-widest">Global Communication Frequency</h5>
+                <h5 class="fw-bold mb-4 small text-white-50 text-uppercase tracking-widest">Global Communication Frequency</h5>
                 <div class="list-group list-group-flush bg-transparent overflow-auto" style="max-height: 400px;">
                     <?php 
                     $msgStmt = $pdo->query("SELECT m.*, u1.name as sender, u2.name as receiver FROM messages m JOIN users u1 ON m.sender_id = u1.id JOIN users u2 ON m.receiver_id = u2.id ORDER BY m.created_at DESC LIMIT 20");
@@ -157,7 +157,7 @@ try {
                                 <span class="small fw-bold text-primary"><?php echo htmlspecialchars($m['sender']); ?> <i class="fas fa-arrow-right mx-1 opacity-25"></i> <?php echo htmlspecialchars($m['receiver']); ?></span>
                                 <span class="fs-mini opacity-25"><?php echo date("H:i", strtotime($m['created_at'])); ?></span>
                             </div>
-                            <p class="small text-muted mb-0 italic">"<?php echo htmlspecialchars($m['content']); ?>"</p>
+                            <p class="small text-white-50 mb-0 italic">"<?php echo htmlspecialchars($m['content']); ?>"</p>
                         </div>
                     <?php endforeach; ?>
                     <?php if ($msgStmt->rowCount() == 0): ?>

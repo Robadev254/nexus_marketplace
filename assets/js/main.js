@@ -146,4 +146,50 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Newsletter Subscription (AJAX)
+    const newsletterForm = document.getElementById('newsletter-form');
+    const newsletterStatus = document.getElementById('newsletter-status');
+    
+    if (newsletterForm && newsletterStatus) {
+        newsletterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = newsletterForm.querySelector('button');
+            const input = newsletterForm.querySelector('input');
+            const email = input.value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            newsletterStatus.classList.add('d-none');
+
+            try {
+                const response = await fetch('api/subscribe.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                const result = await response.json();
+
+                newsletterStatus.textContent = result.message;
+                newsletterStatus.classList.remove('d-none');
+                
+                if (result.status === 'success') {
+                    newsletterStatus.classList.replace('text-danger', 'text-success');
+                    newsletterStatus.classList.add('text-success');
+                    newsletterForm.reset();
+                } else if (result.status === 'info') {
+                    newsletterStatus.classList.add('text-warning');
+                } else {
+                    newsletterStatus.classList.add('text-danger');
+                }
+            } catch (err) {
+                newsletterStatus.textContent = "Synchronization Failed. Please check your Uplink.";
+                newsletterStatus.classList.remove('d-none', 'text-success');
+                newsletterStatus.classList.add('text-danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Subscribe';
+            }
+        });
+    }
 });

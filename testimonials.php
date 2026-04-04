@@ -39,7 +39,7 @@ try {
     $stmt->execute();
     $reviews = $stmt->fetchAll();
 } catch (PDOException $e) {
-    die("Global Archive Access Error.");
+    die("Global Archive Access Error: " . $e->getMessage());
 }
 ?>
 

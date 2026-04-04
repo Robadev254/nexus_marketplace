@@ -1,258 +1,251 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Apr 03, 2026 at 03:49 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- ============================================================
+-- NEXUS MARKETPLACE - Complete Database Schema
+-- Generated: Apr 03, 2026
+-- Server: MariaDB 10.4+ / MySQL 8.0+
+-- ============================================================
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
---
--- Database: `marketplace`
---
+-- ============================================================
+-- Drop existing tables (in FK-safe order)
+-- ============================================================
 
--- --------------------------------------------------------
+DROP TABLE IF EXISTS `testimonials`;
+DROP TABLE IF EXISTS `messages`;
+DROP TABLE IF EXISTS `order_items`;
+DROP TABLE IF EXISTS `orders`;
+DROP TABLE IF EXISTS `cart`;
+DROP TABLE IF EXISTS `products`;
+DROP TABLE IF EXISTS `categories`;
+DROP TABLE IF EXISTS `users`;
 
---
--- Table structure for table `cart`
---
+-- ============================================================
+-- 1. USERS TABLE
+-- Stores all platform accounts: Buyers, Sellers, and Admins.
+-- Includes password reset token support and seller store info.
+-- Sellers can configure: physical store address, delivery fee,
+-- and which fulfillment methods they offer (delivery/pickup).
+-- ============================================================
 
-CREATE TABLE `cart` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `product_id` int(11) DEFAULT NULL,
-  `quantity` int(11) DEFAULT 1
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('Buyer','Seller','Admin') NOT NULL DEFAULT 'Buyer',
+  `profile_pic` varchar(255) DEFAULT 'assets/img/default_user.png',
+  `is_admin` tinyint(1) NOT NULL DEFAULT 0,
+  `reset_token` varchar(64) DEFAULT NULL,
+  `token_expiry` datetime DEFAULT NULL,
+  -- Seller Store & Fulfillment Settings
+  `store_name` varchar(150) DEFAULT NULL,
+  `store_address` text DEFAULT NULL,
+  `store_city` varchar(100) DEFAULT NULL,
+  `delivery_fee` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `offers_delivery` tinyint(1) NOT NULL DEFAULT 1,
+  `offers_pickup` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_users_role` (`role`),
+  KEY `idx_users_reset_token` (`reset_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
+-- ============================================================
+-- 2. CATEGORIES TABLE
+-- Marketplace product classification nodes managed by admin.
+-- Each category has an icon (Font Awesome class) and brand color.
+-- ============================================================
 
---
--- Table structure for table `orders`
---
-
-CREATE TABLE `orders` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `total_price` decimal(10,2) NOT NULL,
-  `status` enum('Pending','Shipped','Delivered','Cancelled') DEFAULT 'Pending',
-  `order_date` timestamp NOT NULL DEFAULT current_timestamp()
+CREATE TABLE `categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `icon` varchar(100) DEFAULT 'fas fa-box',
+  `color` varchar(20) DEFAULT '#6366f1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `order_items`
---
-
-CREATE TABLE `order_items` (
-  `id` int(11) NOT NULL,
-  `order_id` int(11) DEFAULT NULL,
-  `product_id` int(11) DEFAULT NULL,
-  `quantity` int(11) DEFAULT NULL,
-  `price` decimal(10,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `products`
---
+-- ============================================================
+-- 3. PRODUCTS TABLE
+-- All marketplace listings. Each product belongs to a seller
+-- (FK -> users) and has a category, condition, stock level.
+-- ============================================================
 
 CREATE TABLE `products` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
   `price` decimal(10,2) NOT NULL,
   `image_url` varchar(255) DEFAULT NULL,
   `category` varchar(50) DEFAULT NULL,
-  `condition` enum('New','Like New','Used','Fair') DEFAULT 'Used',
-  `stock` int(11) DEFAULT 1,
-  `seller_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `condition` enum('New','Like New','Used','Fair') NOT NULL DEFAULT 'Used',
+  `stock` int(11) NOT NULL DEFAULT 1,
+  `seller_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_products_seller` (`seller_id`),
+  KEY `idx_products_category` (`category`),
+  KEY `idx_products_stock` (`stock`),
+  KEY `idx_products_created` (`created_at`),
+  CONSTRAINT `fk_products_seller` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `products`
---
+-- ============================================================
+-- 4. CART TABLE
+-- Temporary shopping cart for buyer accounts.
+-- Each row = one product in a user's cart with quantity.
+-- Sellers are blocked from adding to cart at the application layer.
+-- ============================================================
 
-INSERT INTO `products` (`id`, `name`, `description`, `price`, `image_url`, `category`, `condition`, `stock`, `seller_id`, `created_at`) VALUES
-(1, 'Vintage Record Player', 'Beautiful wooden turntable with high-fidelity sound.', 150.00, 'assets/vintage', 'Electronics', 'Like New', 1, 1, '2026-04-03 13:38:36'),
-(2, 'Denim Jacket', 'Classic blue denim jacket, oversized fit.', 45.00, 'assets/denim', 'Clothing', 'Used', 3, 1, '2026-04-03 13:38:36'),
-(3, 'The Great Gatsby', 'Hardcover edition of the classic novel.', 12.50, 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80', 'Books', 'New', 5, 1, '2026-04-03 13:38:36');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
-
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `role` enum('Buyer','Seller','Admin') DEFAULT 'Buyer',
-  `profile_pic` varchar(255) DEFAULT 'assets/img/default_user.png',
-  `is_admin` tinyint(1) DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+CREATE TABLE `cart` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_cart_user` (`user_id`),
+  KEY `idx_cart_product` (`product_id`),
+  UNIQUE KEY `unique_cart_item` (`user_id`, `product_id`),
+  CONSTRAINT `fk_cart_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cart_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `users`
---
+-- ============================================================
+-- 5. ORDERS TABLE
+-- Finalized purchase records. Created at checkout.
+-- user_id = the buyer who placed the order.
+-- Tracks: fulfillment method (Delivery/Pickup), shipping address,
+-- delivery fee, payment method, and order lifecycle status.
+-- ============================================================
 
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `profile_pic`, `is_admin`, `created_at`) VALUES
-(1, 'Admin User', 'admin1@gmail.com', '$2y$12$ixeZdOm5AAl5k5EBB2b0neUw5dOW0niC57EBZndCGfmQ/OigP3NYC', 'Admin', 'assets/img/default_user.png', 1, '2026-04-03 13:38:36');
+CREATE TABLE `orders` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `total_price` decimal(10,2) NOT NULL,
+  `delivery_fee` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `delivery_method` enum('Delivery','Pickup') NOT NULL DEFAULT 'Delivery',
+  `shipping_address` text DEFAULT NULL,
+  `pickup_seller_id` int(11) DEFAULT NULL,
+  `payment_method` enum('Card','PayPal') NOT NULL DEFAULT 'Card',
+  `status` enum('Pending','Shipped','Delivered','Cancelled') NOT NULL DEFAULT 'Pending',
+  `order_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_orders_user` (`user_id`),
+  KEY `idx_orders_status` (`status`),
+  KEY `idx_orders_date` (`order_date`),
+  CONSTRAINT `fk_orders_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
+-- ============================================================
+-- 6. ORDER_ITEMS TABLE
+-- Line items for each order. Each row = one product in an order.
+-- price is recorded at time of purchase (snapshot) to preserve
+-- historical accuracy. This is the "Selling Price" used for
+-- revenue calculation: Total Revenue = Sigma (price x quantity).
+-- ============================================================
 
---
--- Table structure for table `messages`
---
+CREATE TABLE `order_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_orderitems_order` (`order_id`),
+  KEY `idx_orderitems_product` (`product_id`),
+  CONSTRAINT `fk_orderitems_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_orderitems_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ============================================================
+-- 7. MESSAGES TABLE
+-- Direct messaging between users (buyer <-> seller communication).
+-- ============================================================
 
 CREATE TABLE `messages` (
-  `id` int(11) NOT NULL,
-  `sender_id` int(11) DEFAULT NULL,
-  `receiver_id` int(11) DEFAULT NULL,
-  `content` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sender_id` int(11) NOT NULL,
+  `receiver_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_messages_sender` (`sender_id`),
+  KEY `idx_messages_receiver` (`receiver_id`),
+  KEY `idx_messages_conversation` (`sender_id`, `receiver_id`),
+  KEY `idx_messages_created` (`created_at`),
+  CONSTRAINT `fk_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_messages_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for dumped tables
---
+-- ============================================================
+-- 8. TESTIMONIALS TABLE
+-- Platform reviews/ratings submitted by authenticated users.
+-- ============================================================
 
---
--- Indexes for table `cart`
---
-ALTER TABLE `cart`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `product_id` (`product_id`);
+CREATE TABLE `testimonials` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `rating` tinyint(1) NOT NULL CHECK (`rating` BETWEEN 1 AND 5),
+  `content` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_testimonials_user` (`user_id`),
+  KEY `idx_testimonials_rating` (`rating`),
+  CONSTRAINT `fk_testimonials_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for table `orders`
---
-ALTER TABLE `orders`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+-- ============================================================
+-- 9. SUBSCRIBERS TABLE
+-- Emails captured for news and updates.
+-- ============================================================
 
---
--- Indexes for table `order_items`
---
-ALTER TABLE `order_items`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `order_id` (`order_id`),
-  ADD KEY `product_id` (`product_id`);
+CREATE TABLE `subscribers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) NOT NULL,
+  `subscribed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for table `products`
---
-ALTER TABLE `products`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `seller_id` (`seller_id`);
+-- ============================================================
+-- SEED DATA: Default Admin Account
+-- Email: admin1@gmail.com | Password: admin123 (bcrypt hashed)
+-- ============================================================
 
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+INSERT INTO `users` (`name`, `email`, `password`, `role`, `profile_pic`, `is_admin`) VALUES
+('Admin User', 'admin1@gmail.com', '$2y$12$ixeZdOm5AAl5k5EBB2b0neUw5dOW0niC57EBZndCGfmQ/OigP3NYC', 'Admin', 'assets/img/default_user.png', 1);
 
---
--- Indexes for table `messages`
---
-ALTER TABLE `messages`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `sender_id` (`sender_id`),
-  ADD KEY `receiver_id` (`receiver_id`);
+-- ============================================================
+-- SEED DATA: Default Categories
+-- ============================================================
 
---
--- AUTO_INCREMENT for dumped tables
---
+INSERT INTO `categories` (`name`, `icon`, `color`) VALUES
+('Electronics', 'fas fa-laptop', '#6366f1'),
+('Clothing', 'fas fa-tshirt', '#ec4899'),
+('Books', 'fas fa-book', '#10b981'),
+('Furniture', 'fas fa-couch', '#f59e0b'),
+('Sports', 'fas fa-futbol', '#ef4444'),
+('Collectibles', 'fas fa-gem', '#8b5cf6'),
+('Accessories', 'fas fa-glasses', '#14b8a6'),
+('Home & Garden', 'fas fa-home', '#f97316');
 
---
--- AUTO_INCREMENT for table `cart`
---
-ALTER TABLE `cart`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+-- ============================================================
+-- SEED DATA: Sample Products (linked to Admin as seller for demo)
+-- ============================================================
 
---
--- AUTO_INCREMENT for table `orders`
---
-ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+INSERT INTO `products` (`name`, `description`, `price`, `image_url`, `category`, `condition`, `stock`, `seller_id`) VALUES
+('Vintage Record Player', 'Beautiful wooden turntable with high-fidelity sound.', 150.00, 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400', 'Electronics', 'Like New', 1, 1),
+('Denim Jacket', 'Classic blue denim jacket, oversized fit.', 45.00, 'https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=400', 'Clothing', 'Used', 3, 1),
+('The Great Gatsby', 'Hardcover edition of the classic novel.', 12.50, 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400', 'Books', 'New', 5, 1);
 
---
--- AUTO_INCREMENT for table `order_items`
---
-ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `products`
---
-ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `messages`
---
-ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `cart`
---
-ALTER TABLE `cart`
-  ADD CONSTRAINT `cart_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `cart_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `orders`
---
-ALTER TABLE `orders`
-  ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `order_items`
---
-ALTER TABLE `order_items`
-  ADD CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `products`
---
-ALTER TABLE `products`
-  ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `messages`
---
-ALTER TABLE `messages`
-  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

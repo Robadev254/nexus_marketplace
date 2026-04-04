@@ -31,7 +31,7 @@ require_once 'db.php';
             <!-- Left Side: Core Navigation -->
             <ul class="navbar-nav me-auto gap-lg-3">
                 <li class="nav-item"><a class="nav-link px-3" href="index.php">Home</a></li>
-                <li class="nav-item"><a class="nav-link px-3" href="products.php">Marketplace</a></li>
+                <li class="nav-item"><a class="nav-link px-3" href="products.php"><?php echo (isset($_SESSION['role']) && $_SESSION['role'] === 'Seller') ? '<i class="fas fa-store me-1"></i> My Storefront' : 'Marketplace'; ?></a></li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="catDropdown" role="button" data-bs-toggle="dropdown">Categories</a>
                     <ul class="dropdown-menu glass-card border-0 shadow-lg mt-2" aria-labelledby="catDropdown">
@@ -52,6 +52,10 @@ require_once 'db.php';
                     $navUser = $pdo->prepare("SELECT profile_pic, name FROM users WHERE id = ?");
                     $navUser->execute([$_SESSION['user_id']]);
                     $navUserData = $navUser->fetch();
+                    if (!$navUserData) {
+                        echo "<script>window.location.href='logout.php';</script>";
+                        exit;
+                    }
                     $nav_pic = $navUserData['profile_pic'] ?: 'https://ui-avatars.com/api/?name=' . urlencode($navUserData['name']) . '&background=6366f1&color=fff';
                 ?>
                     <li class="nav-item dropdown">
@@ -70,8 +74,10 @@ require_once 'db.php';
                             
                             <li><h6 class="dropdown-header text-primary small fw-bold text-uppercase mb-2">MY ACCOUNT</h6></li>
                             <li><a class="dropdown-item py-2 rounded-3 text-white" href="profile.php"><i class="fas fa-user-circle me-2 opacity-50"></i> My Profile</a></li>
+                            <?php if ($_SESSION['role'] !== 'Seller'): ?>
                             <li><a class="dropdown-item py-2 rounded-3 text-white" href="cart.php"><i class="fas fa-shopping-cart me-2 opacity-50"></i> My Cart</a></li>
                             <li><a class="dropdown-item py-2 rounded-3 text-white" href="myorders.php"><i class="fas fa-box-open me-2 opacity-50"></i> My Orders</a></li>
+                            <?php endif; ?>
                             <li><a class="dropdown-item py-2 rounded-3 text-white" href="testimonials.php"><i class="fas fa-star me-2 opacity-50"></i> Platform Reviews</a></li>
                             
                             <?php if ($_SESSION['is_admin']): ?>
@@ -79,7 +85,7 @@ require_once 'db.php';
                             <?php endif; ?>
 
                             <li><hr class="dropdown-divider opacity-10 my-3"></li>
-                            <li><a class="dropdown-item py-2 rounded-3 text-danger mt-2" href="logout.php"><i class="fas fa-sign-out-alt me-2 opacity-75"></i> Logout Session</a></li>
+                            <li><a class="dropdown-item py-2 rounded-3 text-danger mt-2" href="logout.php"><i class="fas fa-sign-out-alt me-2 opacity-75"></i> Logout</a></li>
                         </ul>
                     </li>
 
